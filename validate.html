@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Image Validator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .animal-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 15px 0;
+            padding: 20px;
+        }
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .image-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 10px;
+            transition: transform 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .success { 
+            background: #e3f2e6;
+            color: #2d5a27;
+        }
+        .error { 
+            background: #fde8e8;
+            color: #c81e1e;
+        }
+        .progress {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .confidence {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .image-info {
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+        .image-info a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .image-info a:hover {
+            text-decoration: underline;
+        }
+        .tags {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .tag {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Animal Image Validator</h1>
+    <div id="progress" class="progress">Starting validation...</div>
+    <div id="results" class="results"></div>
+
+    <script type="module">
+        import { validateAllAnimals } from './js/imageValidator.js';
+        import { animals } from './js/animals.js';
+
+        async function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            const progressDiv = document.getElementById('progress');
+
+            progressDiv.textContent = `Validation complete! Found ${results.validatedCount} valid animals out of ${results.totalAnimals}`;
+
+            results.validatedAnimals.forEach(animal => {
+                const animalDiv = document.createElement('div');
+                animalDiv.className = 'animal-card';
+                
+                const status = animal.validatedImages.length > 0 ? 'success' : 'error';
+                const statusText = status === 'success' 
+                    ? `Found ${animal.validatedImages.length} valid images`
+                    : 'No valid images found';
+
+                animalDiv.innerHTML = `
+                    <h2>${animal.name}</h2>
+                    <p class="description">${animal.description}</p>
+                    <div class="tags">
+                        ${animal.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                    <div class="status ${status}">${statusText}</div>
+                    <div class="images-grid">
+                        ${animal.validatedImages.map(img => `
+                            <div class="image-card">
+                                <img src="${img.url}" alt="${animal.name}">
+                                <div class="image-info">
+                                    <div>Photo by: <a href="${img.photographerUrl}" target="_blank">${img.photographer}</a></div>
+                                    <div class="confidence">Confidence: ${img.confidence}%</div>
+                                    ${img.tags ? `
+                                        <div class="tags">
+                                            ${img.tags.slice(0,3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                resultsDiv.appendChild(animalDiv);
+            });
+        }
+
+        // Run validation when page loads
+        validateAllAnimals(animals).then(displayResults).catch(error => {
+            document.getElementById('progress').innerHTML = `
+                <div class="error">Error during validation: ${error.message}</div>
+            `;
+        });
+    </script>
+</body>
+</html>

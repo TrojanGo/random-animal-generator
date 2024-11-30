@@ -1,0 +1,15 @@
+{
+    "redirects": [
+        {
+            "source": "/",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "www.random-animal-generator.online"
+                }
+            ],
+            "destination": "https://random-animal-generator.online",
+            "permanent": true
+        }
+    ]
+}
