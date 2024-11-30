@@ -89,8 +89,8 @@ async function generateRandomAnimal() {
         animalName.textContent = randomAnimal.name;
         animalDescription.textContent = randomAnimal.description;
 
-        // Build a more specific search term
-        const searchTerm = randomAnimal.name;
+        // Use the specific search term for this animal
+        const searchTerm = randomAnimal.searchTerm;
         console.log('Search term:', searchTerm);
 
         // Get and display image
