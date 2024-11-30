@@ -22,18 +22,17 @@ async function getRandomAnimalImage(searchTerm) {
 
     while (retryCount < maxRetries) {
         try {
-            // Add specific filters to improve image relevance
-            const params = new URLSearchParams({
+            // First search for images
+            const searchParams = new URLSearchParams({
                 query: searchTerm,
                 orientation: 'landscape',
                 content_filter: 'high',
-                per_page: 1,
-                collections: '3678981,2022043,1298482,2489501', // Specific wildlife collections
+                per_page: 20,
                 order_by: 'relevant'
             });
 
-            const response = await fetch(
-                `https://api.unsplash.com/photos/random?${params.toString()}`,
+            const searchResponse = await fetch(
+                `https://api.unsplash.com/search/photos?${searchParams.toString()}`,
                 {
                     headers: {
                         'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
@@ -41,15 +40,29 @@ async function getRandomAnimalImage(searchTerm) {
                 }
             );
             
-            if (!response.ok) {
-                throw new Error('Failed to fetch image');
+            if (!searchResponse.ok) {
+                throw new Error('Failed to search images');
             }
             
-            const data = await response.json();
+            const searchData = await searchResponse.json();
+            
+            // If no results found, try with a simpler search term
+            if (searchData.results.length === 0) {
+                if (searchTerm.includes('animal')) {
+                    searchTerm = searchTerm.replace('animal', '').trim();
+                    continue;
+                }
+                throw new Error('No images found');
+            }
+
+            // Get a random image from the results
+            const randomIndex = Math.floor(Math.random() * Math.min(searchData.results.length, 5));
+            const image = searchData.results[randomIndex];
+            
             return {
-                url: data.urls.regular,
-                photographer: data.user.name,
-                photographerUrl: data.user.links.html
+                url: image.urls.regular,
+                photographer: image.user.name,
+                photographerUrl: image.user.links.html
             };
         } catch (error) {
             console.error('Error fetching image:', error);
@@ -77,7 +90,7 @@ async function generateRandomAnimal() {
         animalDescription.textContent = randomAnimal.description;
 
         // Build a more specific search term
-        const searchTerm = `${randomAnimal.name} wildlife photography`;
+        const searchTerm = `${randomAnimal.name} animal in wild`;
         console.log('Search term:', searchTerm);
 
         // Get and display image
