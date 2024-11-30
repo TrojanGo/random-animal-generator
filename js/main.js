@@ -27,7 +27,10 @@ async function getRandomAnimalImage(searchTerm) {
                 query: searchTerm,
                 orientation: 'landscape',
                 content_filter: 'high',
-                per_page: 1
+                per_page: 30, // Get more images to choose from
+                order_by: 'relevant', // Sort by relevance
+                collections: 'animal-wildlife,wildlife-photography', // Limit to wildlife collections
+                content_safety: 'high' // Ensure safe content
             });
 
             const response = await fetch(
@@ -74,8 +77,17 @@ async function generateRandomAnimal() {
         animalName.textContent = randomAnimal.name;
         animalDescription.textContent = randomAnimal.description;
 
+        // Build a more specific search term using tags
+        const searchTerms = [
+            randomAnimal.name,
+            'wildlife',
+            'nature',
+            ...randomAnimal.tags.slice(0, 2) // Add first two tags
+        ];
+        const searchTerm = searchTerms.join(' ');
+        console.log('Search term:', searchTerm);
+
         // Get and display image
-        const searchTerm = `${randomAnimal.name} animal wildlife`;
         const imageData = await getRandomAnimalImage(searchTerm);
 
         // Create image container
