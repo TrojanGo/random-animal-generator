@@ -1,75 +1,71 @@
-// Unsplash API configuration
-const UNSPLASH_ACCESS_KEY = 'NjLvBP_Pj9nvSmTUcvU-2AsDF2-Tqx_sBPK_F1ju_8s';
+// Import animal data
+import { animals } from './animals.js';
 
 // DOM Elements
 const generateBtn = document.getElementById('generate-btn');
 const animalImage = document.getElementById('animal-image');
 const animalName = document.getElementById('animal-name');
 const animalDescription = document.getElementById('animal-description');
-const totalAnimals = document.getElementById('total-animals');
 
-// Import animal data
-import { animals } from './animals.js';
+// Pixabay API configuration
+const PIXABAY_API_KEY = '47405924-f7198a6e5f8e11e814f6c4ff5';
 
-// Log animals data for debugging
-console.log('Total animals loaded:', animals.length);
-
-// Fetch random image from Unsplash
-async function getRandomAnimalImage(searchTerm) {
-    console.log('Fetching image for search term:', searchTerm);
+// Get random animal image from Pixabay
+async function getRandomAnimalImage(animalName) {
     const maxRetries = 3;
     let retryCount = 0;
 
     while (retryCount < maxRetries) {
         try {
-            // First search for images
-            const searchParams = new URLSearchParams({
-                query: searchTerm,
-                orientation: 'landscape',
-                content_filter: 'high',
-                per_page: 20,
-                order_by: 'relevant'
-            });
+            // Clean and encode the search term
+            const searchTerm = encodeURIComponent(animalName.toLowerCase().trim());
+            const apiUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${searchTerm}&image_type=photo&per_page=3&safesearch=true&category=animals`;
+            
+            console.log('Fetching from URL:', apiUrl);
 
-            const searchResponse = await fetch(
-                `https://api.unsplash.com/search/photos?${searchParams.toString()}`,
-                {
-                    headers: {
-                        'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`
-                    }
-                }
-            );
-            
-            if (!searchResponse.ok) {
-                throw new Error('Failed to search images');
-            }
-            
-            const searchData = await searchResponse.json();
-            
-            // If no results found, try with a simpler search term
-            if (searchData.results.length === 0) {
-                if (searchTerm.includes('animal')) {
-                    searchTerm = searchTerm.replace('animal', '').trim();
-                    continue;
-                }
-                throw new Error('No images found');
+            const response = await fetch(apiUrl);
+            console.log('Response status:', response.status);
+
+            if (response.status === 429) {
+                throw new Error('API rate limit exceeded. Please try again later.');
             }
 
-            // Get a random image from the results
-            const randomIndex = Math.floor(Math.random() * Math.min(searchData.results.length, 5));
-            const image = searchData.results[randomIndex];
-            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API Error Response:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('API Response data:', data);
+
+            if (!data.hits || data.hits.length === 0) {
+                // Try a more generic search term
+                if (animalName.includes(' ')) {
+                    const genericTerm = animalName.split(' ')[0];
+                    console.log('No results found, trying generic term:', genericTerm);
+                    return getRandomAnimalImage(genericTerm);
+                }
+                throw new Error(`No image found for ${animalName}`);
+            }
+
+            // Randomly select one of the returned images
+            const image = data.hits[Math.floor(Math.random() * Math.min(data.hits.length, 3))];
             return {
-                url: image.urls.regular,
-                photographer: image.user.name,
-                photographerUrl: image.user.links.html
+                url: image.largeImageURL,
+                photographer: image.user,
+                photographerUrl: `https://pixabay.com/users/${image.user}-${image.user_id}/`
             };
         } catch (error) {
-            console.error('Error fetching image:', error);
             retryCount++;
-            if (retryCount === maxRetries) {
-                throw new Error('Failed to fetch image after multiple attempts');
+            console.error(`Attempt ${retryCount}/${maxRetries} failed:`, error);
+            
+            if (retryCount === maxRetries || error.message.includes('rate limit')) {
+                throw error;
             }
+            
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
 }
@@ -77,50 +73,48 @@ async function getRandomAnimalImage(searchTerm) {
 // Generate random animal
 async function generateRandomAnimal() {
     try {
-        // Disable button while generating
+        // Disable button and show loading state
         generateBtn.disabled = true;
         generateBtn.textContent = 'Generating...';
+        animalImage.innerHTML = '<div class="loading">Loading...</div>';
 
         // Get random animal
-        const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
-        console.log('Selected animal:', randomAnimal.name);
+        const animal = animals[Math.floor(Math.random() * animals.length)];
+        console.log('Selected animal:', animal);
 
-        // Update text content
-        animalName.textContent = randomAnimal.name;
-        animalDescription.textContent = randomAnimal.description;
+        // Update text
+        animalName.textContent = animal.name;
+        animalDescription.textContent = animal.description;
 
-        // Use the specific search term for this animal
-        const searchTerm = randomAnimal.searchTerm;
-        console.log('Search term:', searchTerm);
+        // Get image
+        const image = await getRandomAnimalImage(animal.searchTerm || animal.name);
 
-        // Get and display image
-        const imageData = await getRandomAnimalImage(searchTerm);
-
-        // Create image container
+        // Create image elements
         const imgContainer = document.createElement('div');
         imgContainer.className = 'image-container';
 
-        // Create and set up image
         const img = document.createElement('img');
-        img.src = imageData.url;
-        img.alt = `${randomAnimal.name} - Wildlife Photo`;
+        img.alt = `${animal.name} photo`;
         img.className = 'animal-img';
+        img.src = image.url;
 
-        // Create photo credit
-        const photoCredit = document.createElement('div');
-        photoCredit.className = 'photo-credit';
-        photoCredit.innerHTML = `Photo by <a href="${imageData.photographerUrl}" target="_blank" rel="noopener">${imageData.photographer}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a>`;
+        // Add loading handler
+        img.onload = () => {
+            // Clear loading state and show image
+            animalImage.innerHTML = '';
+            imgContainer.appendChild(img);
+            animalImage.appendChild(imgContainer);
+        };
 
-        // Clear previous content and add new elements
-        animalImage.innerHTML = '';
-        imgContainer.appendChild(img);
-        imgContainer.appendChild(photoCredit);
-        animalImage.appendChild(imgContainer);
+        img.onerror = () => {
+            animalImage.innerHTML = '<div class="error">Failed to load image</div>';
+        };
 
     } catch (error) {
-        console.error('Error generating animal:', error);
-        animalName.textContent = 'Error generating animal';
-        animalDescription.textContent = 'Please try again';
+        console.error('Error:', error);
+        animalName.textContent = 'Error';
+        animalDescription.textContent = error.message || 'Please try again later';
+        animalImage.innerHTML = '<div class="error">Failed to load image</div>';
     } finally {
         // Re-enable button
         generateBtn.disabled = false;
@@ -128,7 +122,7 @@ async function generateRandomAnimal() {
     }
 }
 
-// Event Listeners
+// Add click handler
 generateBtn.addEventListener('click', generateRandomAnimal);
 
 // Initial generation

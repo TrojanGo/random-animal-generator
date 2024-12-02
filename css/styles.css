@@ -164,6 +164,7 @@ body {
     position: relative;
     width: 100%;
     max-width: 800px;
+    max-height: 70vh;
     margin: 0 auto;
     border-radius: 12px;
     overflow: hidden;
@@ -172,7 +173,8 @@ body {
 
 .animal-image img {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     display: block;
     transition: transform 0.3s ease;
 }
@@ -765,6 +767,46 @@ section h2 {
     }
 }
 
+/* Mobile Navigation */
+.mobile-menu-btn {
+    display: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.mobile-menu-btn span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: var(--text-color);
+    margin: 5px 0;
+    transition: all 0.3s ease;
+}
+
+/* Media Queries for Navigation */
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .nav-links {
+        display: none;
+        position: fixed;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background: white;
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+}
+
 /* Add hamburger menu for mobile */
 .menu-toggle {
     display: none;
@@ -890,5 +932,84 @@ section h2 {
     .feature-item,
     .feature-column {
         padding: 1.5rem;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    /* Typography */
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+
+    .title-main {
+        font-size: 2.2rem;
+    }
+
+    .title-sub {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+    }
+
+    /* Sections */
+    .container {
+        padding: 0 1rem;
+    }
+
+    section {
+        padding: 3rem 1rem;
+    }
+
+    /* Grid Layouts */
+    .features,
+    .benefits-grid,
+    .facts-grid,
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    /* Forms */
+    .contact-form {
+        padding: 0 1rem;
+    }
+
+    /* Buttons */
+    .cta-button,
+    .generate-button {
+        width: 100%;
+        text-align: center;
+        margin: 0.5rem 0;
+    }
+
+    /* Animal Display */
+    .animal-display {
+        padding: 1rem;
+        margin: 1rem auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
+
+    .title-main {
+        font-size: 2rem;
+    }
+
+    .title-sub {
+        font-size: 1.3rem;
+    }
+
+    .container {
+        padding: 0 0.8rem;
+    }
+
+    .animal-display {
+        padding: 0.8rem;
     }
 }
